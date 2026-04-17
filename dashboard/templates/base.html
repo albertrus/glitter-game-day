@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Dashboard{% endblock %} — GlitterGameDay</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="/static/css/style.css" rel="stylesheet">
+</head>
+<body>
+<div class="d-flex" id="app-wrapper">
+
+  <!-- Sidebar -->
+  <nav class="sidebar d-flex flex-column" id="sidebar">
+    <div class="sidebar-brand p-3 pb-2">
+      <div class="brand-name">✨ GlitterGameDay</div>
+      <small class="text-muted">Marketing Suite</small>
+    </div>
+    <hr class="sidebar-divider">
+    <ul class="nav flex-column px-2 flex-grow-1">
+      <li class="nav-item">
+        <a href="/" class="nav-link {% if request.url.path == '/' %}active{% endif %}">
+          <i class="bi bi-speedometer2"></i> Overview
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="/reports" class="nav-link {% if 'reports' in request.url.path %}active{% endif %}">
+          <i class="bi bi-file-earmark-bar-graph"></i> Reports
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="/content" class="nav-link {% if 'content' in request.url.path %}active{% endif %}">
+          <i class="bi bi-calendar-week"></i> Content Calendar
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="/abtests" class="nav-link {% if 'abtests' in request.url.path %}active{% endif %}">
+          <i class="bi bi-bar-chart-steps"></i> A/B Tests
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="/ads" class="nav-link {% if 'ads' in request.url.path %}active{% endif %}">
+          <i class="bi bi-megaphone"></i> Ads Manager
+        </a>
+      </li>
+    </ul>
+    <div class="sidebar-footer p-3">
+      <a href="https://glittergameday.etsy.com" target="_blank" class="etsy-link">
+        <i class="bi bi-shop"></i> Open Etsy Store
+      </a>
+    </div>
+  </nav>
+
+  <!-- Main content -->
+  <div class="main-content flex-grow-1 d-flex flex-column">
+    <nav class="top-bar d-flex align-items-center justify-content-between px-4">
+      <h5 class="mb-0 fw-semibold">{% block page_title %}{% endblock %}</h5>
+      <div class="d-flex align-items-center gap-3">
+        <span class="agent-status"><span class="status-dot"></span> AI Agents Active</span>
+      </div>
+    </nav>
+
+    <main class="p-4 flex-grow-1">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastContainer"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+function showToast(msg, type = 'success') {
+  const id = 'toast-' + Date.now();
+  const color = type === 'success' ? '#9B59B6' : '#E74C3C';
+  document.getElementById('toastContainer').insertAdjacentHTML('beforeend', `
+    <div id="${id}" class="toast align-items-center border-0 show" role="alert" style="background:${color}">
+      <div class="d-flex">
+        <div class="toast-body text-white fw-semibold">${msg}</div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+      </div>
+    </div>`);
+  setTimeout(() => document.getElementById(id)?.remove(), 4000);
+}
+
+async function triggerAgent(endpoint, btn) {
+  btn.disabled = true;
+  const orig = btn.innerHTML;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Running…';
+  try {
+    const res = await fetch(endpoint, { method: 'POST' });
+    const data = await res.json();
+    showToast(data.message || 'Agent started!');
+  } catch {
+    showToast('Something went wrong', 'error');
+  } finally {
+    btn.innerHTML = orig;
+    btn.disabled = false;
+  }
+}
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

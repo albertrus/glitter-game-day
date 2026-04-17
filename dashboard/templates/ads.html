@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Ads Manager{% endblock %}
+{% block page_title %}📣 Ads Manager{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <p class="text-muted mb-0">All AI-generated ad copy, ready to post.</p>
+  <div class="d-flex gap-2">
+    <div class="filter-group" id="platformFilter">
+      <button class="filter-btn active" data-filter="all">All</button>
+      <button class="filter-btn" data-filter="instagram">Instagram</button>
+      <button class="filter-btn" data-filter="facebook">Facebook</button>
+      <button class="filter-btn" data-filter="tiktok">TikTok</button>
+      <button class="filter-btn" data-filter="pinterest">Pinterest</button>
+    </div>
+    <button class="action-btn" onclick="triggerAgent('/api/run/generate-ads', this)">
+      <i class="bi bi-plus-lg me-1"></i> Generate New Ads
+    </button>
+  </div>
+</div>
+
+{% if ads %}
+<div class="row g-3" id="adsGrid">
+  {% for ad in ads %}
+  <div class="col-md-6 col-xl-4 ad-card-wrapper" data-platform="{{ ad.platform }}">
+    <div class="card ad-card h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <span class="platform-badge badge-{{ ad.platform }}">
+            <i class="bi bi-{{ {'instagram':'instagram','facebook':'facebook','pinterest':'pinterest','tiktok':'tiktok'}.get(ad.platform, 'share') }}"></i>
+            {{ ad.platform | title }}
+          </span>
+          <span class="variant-badge">{{ ad.variant_label }}</span>
+        </div>
+        <h6 class="ad-headline">{{ ad.headline }}</h6>
+        <p class="ad-body text-muted small">{{ ad.body[:150] }}{% if ad.body|length > 150 %}…{% endif %}</p>
+        <div class="hashtags-preview mb-2">
+          {% for tag in ad.hashtags[:4] %}
+          <span class="hashtag-chip">{{ tag }}</span>
+          {% endfor %}
+          {% if ad.hashtags|length > 4 %}
+          <span class="text-muted small">+{{ ad.hashtags|length - 4 }}</span>
+          {% endif %}
+        </div>
+        <div class="ad-footer">
+          <small class="text-muted">{{ ad.product_info.name[:35] }}</small>
+          <div class="d-flex gap-1 mt-2">
+            <button class="btn-copy flex-grow-1" onclick="copyAdCopy({{ loop.index0 }})">
+              <i class="bi bi-clipboard me-1"></i>Copy
+            </button>
+            <button class="btn-copy" onclick="toggleExpand({{ loop.index0 }})">
+              <i class="bi bi-arrows-expand" id="expand-icon-{{ loop.index0 }}"></i>
+            </button>
+          </div>
+          <div id="ad-full-{{ loop.index0 }}" class="ad-full-content mt-2" style="display:none">
+            <hr class="border-purple-subtle">
+            <strong class="text-purple small">Full Body</strong>
+            <p class="small mt-1" id="ad-body-full-{{ loop.index0 }}">{{ ad.body }}</p>
+            <strong class="text-purple small">CTA</strong>
+            <p class="small mt-1">{{ ad.cta }}</p>
+            {% if ad.hashtags %}
+            <strong class="text-purple small">All Hashtags</strong>
+            <p class="small mt-1 text-muted" id="ad-hashtags-{{ loop.index0 }}">{{ ad.hashtags | join(' ') }}</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<script>
+const adsData = {{ ads | tojson }};
+
+function copyAdCopy(i) {
+  const ad = adsData[i];
+  const text = `${ad.headline}\n\n${ad.body}\n\n${ad.cta}\n\n${ad.hashtags.join(' ')}`;
+  navigator.clipboard.writeText(text).then(() => showToast('Ad copy copied!'));
+}
+
+function toggleExpand(i) {
+  const el = document.getElementById('ad-full-' + i);
+  const icon = document.getElementById('expand-icon-' + i);
+  const visible = el.style.display !== 'none';
+  el.style.display = visible ? 'none' : 'block';
+  icon.className = visible ? 'bi bi-arrows-expand' : 'bi bi-arrows-collapse';
+}
+
+document.getElementById('platformFilter').addEventListener('click', (e) => {
+  const btn = e.target.closest('.filter-btn');
+  if (!btn) return;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const filter = btn.dataset.filter;
+  document.querySelectorAll('.ad-card-wrapper').forEach(card => {
+    card.style.display = (filter === 'all' || card.dataset.platform === filter) ? '' : 'none';
+  });
+});
+</script>
+
+{% else %}
+<div class="card">
+  <div class="card-body">
+    <div class="empty-state">
+      <i class="bi bi-megaphone"></i>
+      <h5>No Ads Generated Yet</h5>
+      <p>Click <strong>Generate New Ads</strong> above to create your first batch.<br>
+      Ads will be generated for Instagram, Facebook, TikTok, and Pinterest.</p>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

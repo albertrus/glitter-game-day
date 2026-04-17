@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% block title %}A/B Tests{% endblock %}
+{% block page_title %}🧪 A/B Tests{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+
+  <!-- Compare form -->
+  <div class="col-lg-4">
+    <div class="card h-100">
+      <div class="card-header-custom">
+        <i class="bi bi-shuffle text-purple"></i> Compare Two Ads
+      </div>
+      <div class="card-body">
+        {% if ad_ids %}
+        <form id="abForm">
+          <div class="mb-3">
+            <label class="form-label text-muted small">Variant A</label>
+            <select class="form-select form-select-dark" name="variant_a" id="variantA">
+              {% for id in ad_ids %}
+              <option value="{{ id }}">{{ id }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="vs-divider">VS</div>
+          <div class="mb-3">
+            <label class="form-label text-muted small">Variant B</label>
+            <select class="form-select form-select-dark" name="variant_b" id="variantB">
+              {% for id in ad_ids %}
+              <option value="{{ id }}" {% if loop.index == 2 %}selected{% endif %}>{{ id }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <button type="submit" class="action-btn w-100" id="compareBtn">
+            <i class="bi bi-play-fill me-1"></i> Run Comparison
+          </button>
+        </form>
+        {% else %}
+        <div class="empty-state">
+          <i class="bi bi-database-x"></i>
+          <p>No metrics recorded yet.<br>Run <code>python main.py --run-ab-test</code> to add sample data.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Result panel -->
+  <div class="col-lg-8">
+    <div class="card h-100" id="resultCard" style="display:none !important">
+      <div class="card-header-custom">
+        <i class="bi bi-trophy text-gold"></i> Comparison Result
+      </div>
+      <div class="card-body" id="resultBody"></div>
+    </div>
+
+    <!-- Metrics table (default view) -->
+    <div class="card h-100" id="metricsCard">
+      <div class="card-header-custom">
+        <i class="bi bi-table text-purple"></i> All Recorded Metrics
+      </div>
+      <div class="card-body p-0">
+        {% if metrics %}
+        <div class="table-responsive">
+          <table class="table table-dark table-hover mb-0 dashboard-table">
+            <thead>
+              <tr>
+                <th>Ad ID</th>
+                <th>Platform</th>
+                <th>Impressions</th>
+                <th>Clicks</th>
+                <th>CTR</th>
+                <th>ROAS</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for id, m in metrics.items() %}
+              <tr>
+                <td><code class="ad-id">{{ id }}</code></td>
+                <td><span class="platform-badge badge-{{ m.platform }}">{{ m.platform | title }}</span></td>
+                <td>{{ "{:,}".format(m.impressions) }}</td>
+                <td>{{ "{:,}".format(m.clicks) }}</td>
+                <td>
+                  <span class="ctr-badge {% if m.ctr >= 3 %}ctr-good{% elif m.ctr >= 1 %}ctr-ok{% else %}ctr-low{% endif %}">
+                    {{ m.ctr }}%
+                  </span>
+                </td>
+                <td>{{ m.roas }}x</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+          <i class="bi bi-bar-chart-line"></i>
+          <p>No metrics yet. Run <code>python main.py --run-ab-test</code> to populate.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('abForm')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('compareBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Comparing…';
+
+  const form = new FormData(e.target);
+  try {
+    const res = await fetch('/api/run/ab-test', { method: 'POST', body: form });
+    const data = await res.json();
+
+    if (data.error) { showToast(data.error, 'error'); return; }
+
+    const isSignificant = data.confidence_score >= 95;
+    document.getElementById('metricsCard').style.display = 'none';
+    const rc = document.getElementById('resultCard');
+    rc.style.removeProperty('display');
+
+    document.getElementById('resultBody').innerHTML = `
+      <div class="result-winner mb-4">
+        <div class="winner-crown">🏆</div>
+        <h4 class="text-gold">${data.winner_id}</h4>
+        <div class="winner-sub">wins with ${data.improvement_pct.toFixed(1)}% better CTR</div>
+      </div>
+      <div class="row g-3 mb-3">
+        <div class="col-6">
+          <div class="stat-box">
+            <div class="stat-label">Confidence</div>
+            <div class="stat-value">${data.confidence_score.toFixed(1)}%</div>
+            <div class="confidence-bar mt-2">
+              <div class="confidence-fill" style="width:${Math.min(data.confidence_score, 100)}%"></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-6">
+          <div class="stat-box">
+            <div class="stat-label">Statistical Significance</div>
+            <div class="stat-value ${isSignificant ? 'text-green' : 'text-warning'}">
+              ${isSignificant ? '✓ Significant' : '⚠ More data needed'}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="recommendation-box">
+        <strong class="text-purple"><i class="bi bi-lightbulb me-1"></i>AI Recommendation</strong>
+        <p class="mt-2 mb-0">${data.recommendation}</p>
+      </div>
+      <button class="btn-link-purple mt-3" onclick="resetView()">← Back to metrics</button>
+    `;
+  } catch { showToast('Comparison failed', 'error'); }
+  finally { btn.disabled = false; btn.innerHTML = '<i class="bi bi-play-fill me-1"></i> Run Comparison'; }
+});
+
+function resetView() {
+  document.getElementById('resultCard').style.display = 'none !important';
+  document.getElementById('resultCard').style.cssText = 'display:none !important';
+  document.getElementById('metricsCard').style.display = '';
+}
+</script>
+{% endblock %}

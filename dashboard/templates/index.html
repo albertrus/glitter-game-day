@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+{% block title %}Overview{% endblock %}
+{% block page_title %}📊 Overview{% endblock %}
+
+{% block content %}
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-6 col-xl-2">
+    <div class="card kpi-card h-100">
+      <div class="card-body">
+        <div class="kpi-icon text-purple mb-1"><i class="bi bi-eye"></i></div>
+        <div class="kpi-value">{{ "{:,}".format(kpis.total_impressions) }}</div>
+        <div class="kpi-label">Impressions</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-2">
+    <div class="card kpi-card h-100">
+      <div class="card-body">
+        <div class="kpi-icon text-gold mb-1"><i class="bi bi-cursor"></i></div>
+        <div class="kpi-value">{{ "{:,}".format(kpis.total_clicks) }}</div>
+        <div class="kpi-label">Total Clicks</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-2">
+    <div class="card kpi-card h-100">
+      <div class="card-body">
+        <div class="kpi-icon text-green mb-1"><i class="bi bi-currency-dollar"></i></div>
+        <div class="kpi-value">${{ "%.2f"|format(kpis.total_revenue) }}</div>
+        <div class="kpi-label">Revenue</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-2">
+    <div class="card kpi-card h-100">
+      <div class="card-body">
+        <div class="kpi-icon text-pink mb-1"><i class="bi bi-graph-up-arrow"></i></div>
+        <div class="kpi-value">{{ kpis.avg_roas }}x</div>
+        <div class="kpi-label">Avg ROAS</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-2">
+    <div class="card kpi-card h-100">
+      <div class="card-body">
+        <div class="kpi-icon text-purple mb-1"><i class="bi bi-percent"></i></div>
+        <div class="kpi-value">{{ kpis.overall_ctr }}%</div>
+        <div class="kpi-label">Overall CTR</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-2">
+    <div class="card kpi-card h-100">
+      <div class="card-body">
+        <div class="kpi-icon text-gold mb-1"><i class="bi bi-megaphone"></i></div>
+        <div class="kpi-value">{{ kpis.total_ads }}</div>
+        <div class="kpi-label">Ads Generated</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Charts + Quick Actions -->
+<div class="row g-3 mb-4">
+  <div class="col-lg-5">
+    <div class="card h-100">
+      <div class="card-header-custom">
+        <i class="bi bi-bar-chart-fill text-purple"></i> Platform Breakdown
+      </div>
+      <div class="card-body">
+        {% if breakdown %}
+        <canvas id="platformChart" height="220"></canvas>
+        {% else %}
+        <div class="empty-state">
+          <i class="bi bi-bar-chart"></i>
+          <p>No metrics yet.<br>Run the agents to start tracking.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="card h-100">
+      <div class="card-header-custom">
+        <i class="bi bi-currency-dollar text-gold"></i> Revenue by Platform
+      </div>
+      <div class="card-body">
+        {% if breakdown %}
+        <canvas id="revenueChart" height="220"></canvas>
+        {% else %}
+        <div class="empty-state">
+          <i class="bi bi-pie-chart"></i>
+          <p>No revenue data yet.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-3">
+    <div class="card h-100">
+      <div class="card-header-custom">
+        <i class="bi bi-lightning-fill text-gold"></i> Quick Actions
+      </div>
+      <div class="card-body d-flex flex-column gap-2">
+        <button class="action-btn w-100" onclick="triggerAgent('/api/run/generate-ads', this)">
+          <i class="bi bi-megaphone me-1"></i> Generate Ads
+        </button>
+        <button class="action-btn w-100" onclick="triggerAgent('/api/run/generate-calendar', this)">
+          <i class="bi bi-calendar-plus me-1"></i> Generate Calendar
+        </button>
+        <button class="action-btn w-100" onclick="triggerAgent('/api/run/generate-report', this)">
+          <i class="bi bi-file-earmark-text me-1"></i> Weekly Report
+        </button>
+        <hr class="my-1 border-purple-subtle">
+        <a href="/reports" class="action-btn-outline w-100 text-center text-decoration-none">
+          <i class="bi bi-arrow-right me-1"></i> View Reports
+        </a>
+        <a href="/content" class="action-btn-outline w-100 text-center text-decoration-none">
+          <i class="bi bi-arrow-right me-1"></i> View Calendar
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Recent Ads -->
+<div class="card">
+  <div class="card-header-custom d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-clock-history text-purple"></i> Recent Ads</span>
+    <a href="/ads" class="btn-link-purple">View All →</a>
+  </div>
+  <div class="card-body p-0">
+    {% if recent_ads %}
+    <div class="table-responsive">
+      <table class="table table-dark table-hover mb-0 dashboard-table">
+        <thead>
+          <tr>
+            <th>Platform</th>
+            <th>Variant</th>
+            <th>Headline</th>
+            <th>CTA</th>
+            <th>Product</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ad in recent_ads %}
+          <tr>
+            <td><span class="platform-badge badge-{{ ad.platform }}">{{ ad.platform | title }}</span></td>
+            <td><span class="variant-badge">{{ ad.variant_label }}</span></td>
+            <td class="text-truncate-col">{{ ad.headline }}</td>
+            <td class="text-muted small">{{ ad.cta[:40] }}…</td>
+            <td class="text-muted small">{{ ad.product_info.name[:30] }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <i class="bi bi-megaphone"></i>
+      <p>No ads generated yet.<br>Click <strong>Generate Ads</strong> to get started.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const PALETTE = ['#9B59B6','#FFD700','#FF69B4','#2ECC71','#3498DB'];
+{% if breakdown %}
+const labels = {{ chart_labels | safe }};
+const impressions = {{ chart_impressions | safe }};
+const revenue = {{ chart_revenue | safe }};
+
+new Chart(document.getElementById('platformChart'), {
+  type: 'bar',
+  data: {
+    labels,
+    datasets: [{
+      label: 'Impressions',
+      data: impressions,
+      backgroundColor: PALETTE,
+      borderRadius: 6,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { ticks: { color: '#A0A0C0' }, grid: { color: 'rgba(155,89,182,0.1)' } },
+      y: { ticks: { color: '#A0A0C0' }, grid: { color: 'rgba(155,89,182,0.1)' } },
+    }
+  }
+});
+
+new Chart(document.getElementById('revenueChart'), {
+  type: 'doughnut',
+  data: {
+    labels,
+    datasets: [{
+      data: revenue,
+      backgroundColor: PALETTE,
+      borderWidth: 2,
+      borderColor: '#1A1A2E',
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'bottom', labels: { color: '#A0A0C0', padding: 12 } }
+    }
+  }
+});
+{% endif %}
+</script>
+{% endblock %}
