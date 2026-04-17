@@ -1,0 +1,92 @@
+{% extends "store/base_store.html" %}
+{% block title %}Your Bag — GlitterGameDay{% endblock %}
+
+{% block content %}
+<div class="page-header-strip">
+  <div class="container-xl px-4">
+    <h1 class="page-header-title">🛍️ Your Bag</h1>
+  </div>
+</div>
+
+<div class="container-xl px-4 py-5">
+  <div class="row g-4" id="cartContent">
+    <!-- Populated by JS -->
+  </div>
+  <div class="text-center py-5 d-none" id="emptyCart">
+    <div style="font-size:3rem">✨</div>
+    <h4 class="mt-3" style="color:var(--s-purple)">Your bag is empty</h4>
+    <p class="text-muted">Time to sparkle up! Add some glitter to your bag.</p>
+    <a href="/store/products" class="hero-btn-primary d-inline-block mt-2">Shop Now</a>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function renderCart() {
+  const cart = getCart();
+  const content = document.getElementById('cartContent');
+  const empty = document.getElementById('emptyCart');
+
+  if (cart.length === 0) {
+    content.classList.add('d-none');
+    empty.classList.remove('d-none');
+    return;
+  }
+
+  const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
+  const shipping = total >= 35 ? 0 : 5.99;
+
+  content.innerHTML = `
+    <div class="col-lg-8">
+      <div class="cart-items-box">
+        ${cart.map((item, idx) => `
+          <div class="cart-item">
+            <img src="${item.image || 'https://placehold.co/80x80/7B2FBE/FFD700?text=✨'}" class="cart-item-img" alt="${item.name}">
+            <div class="cart-item-info flex-grow-1">
+              <div class="cart-item-name">${item.name}</div>
+              <div class="cart-item-price">$${item.price.toFixed(2)} each</div>
+              <div class="d-flex align-items-center gap-2 mt-2">
+                <button class="qty-btn" onclick="updateQty(${idx}, -1)">−</button>
+                <span class="qty-val">${item.qty}</span>
+                <button class="qty-btn" onclick="updateQty(${idx}, 1)">+</button>
+                <button class="remove-btn ms-2" onclick="removeItem(${idx})"><i class="bi bi-trash"></i></button>
+              </div>
+            </div>
+            <div class="cart-item-subtotal">$${(item.price * item.qty).toFixed(2)}</div>
+          </div>`).join('')}
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="order-summary-box">
+        <h5 class="summary-title">Order Summary</h5>
+        <div class="summary-row"><span>Subtotal</span><span>$${total.toFixed(2)}</span></div>
+        <div class="summary-row"><span>Shipping</span><span>${shipping === 0 ? '<span class="text-success">Free!</span>' : '$' + shipping.toFixed(2)}</span></div>
+        ${total < 35 ? `<div class="free-shipping-note">Add $${(35 - total).toFixed(2)} more for free shipping!</div>` : ''}
+        <hr style="border-color:rgba(123,47,190,0.2)">
+        <div class="summary-total"><span>Total</span><span>$${(total + shipping).toFixed(2)}</span></div>
+        <a href="/store/checkout" class="checkout-btn w-100 d-block text-center mt-3">
+          Checkout <i class="bi bi-arrow-right ms-1"></i>
+        </a>
+        <a href="/store/products" class="continue-shopping">← Continue Shopping</a>
+      </div>
+    </div>`;
+}
+
+function updateQty(idx, delta) {
+  const cart = getCart();
+  cart[idx].qty = Math.max(1, cart[idx].qty + delta);
+  saveCart(cart);
+  renderCart();
+}
+
+function removeItem(idx) {
+  const cart = getCart();
+  cart.splice(idx, 1);
+  saveCart(cart);
+  renderCart();
+}
+
+document.addEventListener('DOMContentLoaded', renderCart);
+</script>
+{% endblock %}

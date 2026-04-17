@@ -1,0 +1,130 @@
+{% extends "store/base_store.html" %}
+{% block title %}Checkout — GlitterGameDay{% endblock %}
+
+{% block content %}
+<div class="page-header-strip">
+  <div class="container-xl px-4">
+    <h1 class="page-header-title">🔒 Checkout</h1>
+  </div>
+</div>
+
+<div class="container-xl px-4 py-5">
+  <div class="row g-4">
+    <!-- Form -->
+    <div class="col-lg-7">
+      <div class="checkout-box">
+        <h5 class="checkout-section-title">Contact & Shipping</h5>
+        <form id="checkoutForm">
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="checkout-label">Full Name</label>
+              <input type="text" class="checkout-input" id="custName" placeholder="Jane Smith" required>
+            </div>
+            <div class="col-12">
+              <label class="checkout-label">Email</label>
+              <input type="email" class="checkout-input" id="custEmail" placeholder="jane@example.com" required>
+            </div>
+            <div class="col-12">
+              <label class="checkout-label">Street Address</label>
+              <input type="text" class="checkout-input" id="custAddress" placeholder="123 Sparkle Lane" required>
+            </div>
+            <div class="col-6">
+              <label class="checkout-label">City</label>
+              <input type="text" class="checkout-input" id="custCity" placeholder="Nashville" required>
+            </div>
+            <div class="col-3">
+              <label class="checkout-label">State</label>
+              <input type="text" class="checkout-input" id="custState" placeholder="TN" maxlength="2" required>
+            </div>
+            <div class="col-3">
+              <label class="checkout-label">ZIP</label>
+              <input type="text" class="checkout-input" id="custZip" placeholder="37201" required>
+            </div>
+          </div>
+          <div class="secure-note mt-3">
+            <i class="bi bi-lock-fill"></i> Payment is processed securely via Stripe. We never store your card details.
+          </div>
+          <button type="submit" class="checkout-btn w-100 mt-4" id="payBtn">
+            <i class="bi bi-credit-card me-2"></i> Pay Securely with Stripe ✨
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Order summary -->
+    <div class="col-lg-5">
+      <div class="order-summary-box">
+        <h5 class="summary-title">Order Summary</h5>
+        <div id="checkoutItems"></div>
+        <hr style="border-color:rgba(123,47,190,0.2)">
+        <div class="summary-row"><span>Subtotal</span><span id="summarySubtotal">—</span></div>
+        <div class="summary-row"><span>Shipping</span><span id="summaryShipping">—</span></div>
+        <div class="summary-total"><span>Total</span><span id="summaryTotal">—</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function renderSummary() {
+  const cart = getCart();
+  if (cart.length === 0) { window.location = '/store/cart'; return; }
+
+  const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
+  const shipping = subtotal >= 35 ? 0 : 5.99;
+  const total = subtotal + shipping;
+
+  document.getElementById('checkoutItems').innerHTML = cart.map(i => `
+    <div class="summary-row">
+      <span>${i.name} × ${i.qty}</span>
+      <span>$${(i.price * i.qty).toFixed(2)}</span>
+    </div>`).join('');
+
+  document.getElementById('summarySubtotal').textContent = '$' + subtotal.toFixed(2);
+  document.getElementById('summaryShipping').innerHTML = shipping === 0 ? '<span class="text-success">Free!</span>' : '$' + shipping.toFixed(2);
+  document.getElementById('summaryTotal').textContent = '$' + total.toFixed(2);
+}
+
+document.getElementById('checkoutForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('payBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Processing…';
+
+  const cart = getCart();
+  const customer = {
+    name: document.getElementById('custName').value,
+    email: document.getElementById('custEmail').value,
+    address: document.getElementById('custAddress').value,
+    city: document.getElementById('custCity').value,
+    state: document.getElementById('custState').value,
+    zip: document.getElementById('custZip').value,
+  };
+
+  try {
+    const res = await fetch('/api/store/checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items: cart, customer }),
+    });
+    const data = await res.json();
+    if (data.url) {
+      localStorage.removeItem('ggd_cart');
+      window.location = data.url;
+    } else {
+      showToast(data.error || 'Something went wrong', 'error');
+      btn.disabled = false;
+      btn.innerHTML = '<i class="bi bi-credit-card me-2"></i> Pay Securely with Stripe ✨';
+    }
+  } catch {
+    showToast('Connection error. Please try again.', 'error');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-credit-card me-2"></i> Pay Securely with Stripe ✨';
+  }
+});
+
+document.addEventListener('DOMContentLoaded', renderSummary);
+</script>
+{% endblock %}

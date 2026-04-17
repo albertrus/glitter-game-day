@@ -1,0 +1,115 @@
+{% extends "store/base_store.html" %}
+{% block title %}GlitterGameDay — Sparkle On Every Game Day{% endblock %}
+
+{% block content %}
+<!-- Hero -->
+<section class="hero">
+  <div class="sparkles" aria-hidden="true">
+    {% for i in range(20) %}
+    <span class="sparkle-dot" style="--x:{{ (i * 37 + 11) % 100 }}%; --delay:{{ (i * 0.3) | round(1) }}s; --size:{{ ((i % 3) + 1) * 6 }}px"></span>
+    {% endfor %}
+  </div>
+  <div class="container-xl px-4 text-center hero-content">
+    <span class="hero-tag">✨ Game Day Ready</span>
+    <h1 class="hero-title">Sparkle On<br><span class="hero-accent">Every Game Day</span></h1>
+    <p class="hero-sub">Handcrafted glitter kits, chunky mixes, and DIY supplies<br class="d-none d-md-block"> for the ultimate sports fan.</p>
+    <div class="d-flex gap-3 justify-content-center flex-wrap">
+      <a href="/store/products" class="hero-btn-primary">Shop the Collection</a>
+      <a href="https://glittergameday.etsy.com" target="_blank" class="hero-btn-outline">Visit Our Etsy</a>
+    </div>
+  </div>
+</section>
+
+<!-- Trust badges -->
+<section class="trust-bar">
+  <div class="container-xl px-4">
+    <div class="row g-3 text-center">
+      <div class="col-6 col-md-3">
+        <div class="trust-item"><i class="bi bi-truck"></i><span>Free Shipping $35+</span></div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="trust-item"><i class="bi bi-shield-check"></i><span>Safe for Skin</span></div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="trust-item"><i class="bi bi-star-fill"></i><span>5-Star Etsy Shop</span></div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="trust-item"><i class="bi bi-box-seam"></i><span>Ships in 1–2 Days</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Featured products -->
+<section class="section-pad">
+  <div class="container-xl px-4">
+    <div class="section-header">
+      <h2 class="section-title">Game Day Favorites ✨</h2>
+      <a href="/store/products" class="section-link">View All →</a>
+    </div>
+    <div class="row g-4">
+      {% for product in featured %}
+      <div class="col-sm-6 col-lg-4">
+        <div class="product-card">
+          <a href="/store/product/{{ product.id }}" class="product-img-link">
+            <img src="{{ product.image_url or 'https://placehold.co/600x600/7B2FBE/FFD700?text=✨' }}"
+                 alt="{{ product.name }}" class="product-img" loading="lazy">
+            {% if product.stock <= 5 and product.stock > 0 %}
+            <span class="stock-badge low">Only {{ product.stock }} left!</span>
+            {% elif product.stock == 0 %}
+            <span class="stock-badge out">Sold Out</span>
+            {% endif %}
+          </a>
+          <div class="product-body">
+            <div class="product-category">{{ product.category | title }}</div>
+            <h3 class="product-name"><a href="/store/product/{{ product.id }}">{{ product.name }}</a></h3>
+            <div class="d-flex align-items-center justify-content-between mt-auto pt-2">
+              <span class="product-price">${{ "%.2f"|format(product.price) }}</span>
+              {% if product.stock > 0 %}
+              <button class="add-to-cart-btn"
+                      onclick="addToCart('{{ product.id }}', {{ product.name|tojson }}, {{ product.price }}, {{ product.image_url|tojson }})">
+                <i class="bi bi-bag-plus"></i> Add to Bag
+              </button>
+              {% else %}
+              <span class="out-of-stock-label">Sold Out</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- About / brand story -->
+<section class="brand-story">
+  <div class="container-xl px-4">
+    <div class="row g-4 align-items-center">
+      <div class="col-lg-6">
+        <div class="story-sparkle-box" aria-hidden="true">
+          <span class="big-sparkle">✨</span>
+          <span class="big-sparkle delay-1">🌟</span>
+          <span class="big-sparkle delay-2">💫</span>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <span class="hero-tag">Our Story</span>
+        <h2 class="section-title mt-2">Born on the Sidelines</h2>
+        <p class="story-text">GlitterGameDay started because we believed every fan deserved to sparkle as bright as their team spirit. We hand-select every glitter, test every kit, and ship with love from our studio.</p>
+        <p class="story-text">Whether it's football Sundays, playoff nights, or just a Tuesday when you need some sparkle — we've got you.</p>
+        <a href="/store/products" class="hero-btn-primary d-inline-block mt-2">Shop Now</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA banner -->
+<section class="cta-banner">
+  <div class="container-xl px-4 text-center">
+    <h2 class="cta-title">Ready to Sparkle? ✨</h2>
+    <p class="cta-sub">Free shipping on orders over $35. Ships in 1–2 business days.</p>
+    <a href="/store/products" class="hero-btn-primary">Shop the Full Collection</a>
+  </div>
+</section>
+{% endblock %}

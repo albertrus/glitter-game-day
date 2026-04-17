@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+{% block title %}Inventory{% endblock %}
+{% block page_title %}📦 Inventory{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+  <div>
+    {% if low_stock_count > 0 %}
+    <span class="badge bg-warning text-dark me-2">⚠️ {{ low_stock_count }} item{{ 's' if low_stock_count != 1 }} low on stock</span>
+    {% endif %}
+    <span class="text-muted small">{{ products|length }} products total</span>
+  </div>
+  <button class="action-btn" data-bs-toggle="modal" data-bs-target="#productModal" onclick="openAdd()">
+    <i class="bi bi-plus-lg me-1"></i> Add Product
+  </button>
+</div>
+
+<!-- Products table -->
+<div class="card">
+  <div class="card-body p-0">
+    {% if products %}
+    <div class="table-responsive">
+      <table class="table table-dark table-hover mb-0 dashboard-table">
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th>Category</th>
+            <th>Price</th>
+            <th>Stock</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in products %}
+          <tr>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <img src="{{ p.image_url or 'https://placehold.co/40x40/7B2FBE/FFD700?text=✨' }}"
+                     width="40" height="40" style="border-radius:6px;object-fit:cover">
+                <div>
+                  <div class="fw-semibold">{{ p.name }}</div>
+                  <small class="text-muted">{{ p.id[:8] }}</small>
+                </div>
+              </div>
+            </td>
+            <td><span class="variant-badge">{{ p.category | title }}</span></td>
+            <td class="fw-semibold">${{ "%.2f"|format(p.price) }}</td>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <span class="stock-num {% if p.stock == 0 %}text-danger{% elif p.stock <= 10 %}text-warning{% else %}text-success{% endif %}">
+                  {{ p.stock }}
+                </span>
+                <form method="post" action="/api/inventory/product/{{ p.id }}/stock" class="d-flex gap-1">
+                  <input type="number" name="adjustment" class="stock-adj-input" placeholder="±" style="width:55px">
+                  <button type="submit" class="btn-copy" title="Adjust stock">+/−</button>
+                </form>
+              </div>
+            </td>
+            <td>
+              {% if p.is_active %}
+              <span class="status-chip active">Active</span>
+              {% else %}
+              <span class="status-chip inactive">Hidden</span>
+              {% endif %}
+            </td>
+            <td>
+              <div class="d-flex gap-1">
+                <button class="btn-copy" title="Edit"
+                        onclick='openEdit({{ p | tojson }})'>
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <form method="post" action="/api/inventory/product/{{ p.id }}/delete" style="display:inline"
+                      onsubmit="return confirm('Hide this product?')">
+                  <button type="submit" class="btn-copy" title="Hide" style="color:#E74C3C">
+                    <i class="bi bi-eye-slash"></i>
+                  </button>
+                </form>
+                <a href="/store/product/{{ p.id }}" target="_blank" class="btn-copy" title="View in store">
+                  <i class="bi bi-box-arrow-up-right"></i>
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <i class="bi bi-box-seam"></i>
+      <h5>No Products Yet</h5>
+      <p>Click <strong>Add Product</strong> to create your first listing.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Add / Edit Product Modal -->
+<div class="modal fade" id="productModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content" style="background:#1A1A2E;border:1px solid rgba(155,89,182,0.3)">
+      <div class="modal-header" style="border-color:rgba(155,89,182,0.3)">
+        <h5 class="modal-title text-white" id="modalTitle">Add Product</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="post" action="/api/inventory/product">
+        <div class="modal-body">
+          <input type="hidden" name="product_id" id="productId">
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label text-muted small">Product Name *</label>
+              <input type="text" class="form-control form-select-dark" name="name" id="pName" required>
+            </div>
+            <div class="col-12">
+              <label class="form-label text-muted small">Description</label>
+              <textarea class="form-control form-select-dark" name="description" id="pDesc" rows="3"></textarea>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label text-muted small">Price ($) *</label>
+              <input type="number" step="0.01" class="form-control form-select-dark" name="price" id="pPrice" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label text-muted small">Stock Qty</label>
+              <input type="number" class="form-control form-select-dark" name="stock" id="pStock" value="0">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label text-muted small">Category</label>
+              <input type="text" class="form-control form-select-dark" name="category" id="pCategory" placeholder="kits, glitter, face…">
+            </div>
+            <div class="col-12">
+              <label class="form-label text-muted small">Image URL</label>
+              <input type="url" class="form-control form-select-dark" name="image_url" id="pImage" placeholder="https://…">
+            </div>
+            <div class="col-12">
+              <label class="form-label text-muted small">Etsy URL</label>
+              <input type="url" class="form-control form-select-dark" name="etsy_url" id="pEtsy" placeholder="https://glittergameday.etsy.com/listing/…">
+            </div>
+            <div class="col-12">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="is_active" id="pActive" checked value="on">
+                <label class="form-check-label text-muted" for="pActive">Active (visible in store)</label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer" style="border-color:rgba(155,89,182,0.3)">
+          <button type="button" class="action-btn-outline" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="action-btn">Save Product</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function openAdd() {
+  document.getElementById('modalTitle').textContent = 'Add Product';
+  document.getElementById('productId').value = '';
+  ['pName','pDesc','pPrice','pStock','pCategory','pImage','pEtsy'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('pStock').value = '0';
+  document.getElementById('pActive').checked = true;
+}
+
+function openEdit(p) {
+  document.getElementById('modalTitle').textContent = 'Edit Product';
+  document.getElementById('productId').value = p.id;
+  document.getElementById('pName').value = p.name;
+  document.getElementById('pDesc').value = p.description || '';
+  document.getElementById('pPrice').value = p.price;
+  document.getElementById('pStock').value = p.stock;
+  document.getElementById('pCategory').value = p.category;
+  document.getElementById('pImage').value = p.image_url || '';
+  document.getElementById('pEtsy').value = p.etsy_url || '';
+  document.getElementById('pActive').checked = p.is_active;
+  new bootstrap.Modal(document.getElementById('productModal')).show();
+}
+</script>
+{% endblock %}

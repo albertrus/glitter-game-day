@@ -6,6 +6,8 @@ from datetime import date, timedelta
 from pathlib import Path
 
 import db.metrics_store as metrics_store
+from api.store_routes import router as store_router
+from api.admin_routes import router as admin_router
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from fastapi import BackgroundTasks, FastAPI, Form, Request
@@ -50,6 +52,8 @@ def _weekly_report_job() -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    from db.database import init_db as init_store_db
+    init_store_db()
     metrics_store.init_db()
     (BASE / "data" / "ads").mkdir(parents=True, exist_ok=True)
     (BASE / "reports").mkdir(exist_ok=True)
@@ -61,6 +65,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="GlitterGameDay Marketing Dashboard", lifespan=lifespan)
+app.include_router(store_router)
+app.include_router(admin_router)
 app.mount(
     "/static",
     StaticFiles(directory=str(BASE / "dashboard" / "static")),

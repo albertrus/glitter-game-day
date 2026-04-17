@@ -1,0 +1,30 @@
+{% extends "store/base_store.html" %}
+{% block title %}Order Confirmed! — GlitterGameDay{% endblock %}
+
+{% block content %}
+<div class="container-xl px-4 py-5 text-center">
+  <div class="success-icon">✨</div>
+  <h1 class="success-title">Order Confirmed!</h1>
+  <p class="success-sub">Thank you for your order! You're about to sparkle. 🌟</p>
+
+  {% if order %}
+  <div class="success-card mx-auto mt-4">
+    <div class="success-row"><span>Order ID</span><code>{{ order.id[:8].upper() }}</code></div>
+    <div class="success-row"><span>Name</span><span>{{ order.customer_name }}</span></div>
+    <div class="success-row"><span>Email</span><span>{{ order.customer_email }}</span></div>
+    <div class="success-row"><span>Total</span><span><strong>${{ "%.2f"|format(order.total) }}</strong></span></div>
+    <div class="success-row">
+      <span>Status</span>
+      <span class="status-pill status-{{ order.status }}">{{ order.status | title }}</span>
+    </div>
+  </div>
+  {% endif %}
+
+  <p class="mt-4 text-muted">A confirmation email will be sent to your inbox. Your order ships in 1–2 business days.</p>
+
+  <div class="d-flex gap-3 justify-content-center flex-wrap mt-4">
+    <a href="/store/products" class="hero-btn-primary">Shop More ✨</a>
+    <a href="https://glittergameday.etsy.com" target="_blank" class="hero-btn-outline">Visit Etsy Store</a>
+  </div>
+</div>
+{% endblock %}

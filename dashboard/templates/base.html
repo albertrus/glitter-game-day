@@ -40,8 +40,24 @@
         </a>
       </li>
       <li class="nav-item">
-        <a href="/ads" class="nav-link {% if 'ads' in request.url.path %}active{% endif %}">
+        <a href="/ads" class="nav-link {% if request.url.path == '/ads' %}active{% endif %}">
           <i class="bi bi-megaphone"></i> Ads Manager
+        </a>
+      </li>
+      <li class="mt-2 px-2"><small class="text-muted" style="font-size:.68rem;text-transform:uppercase;letter-spacing:.5px">Store</small></li>
+      <li class="nav-item">
+        <a href="/inventory" class="nav-link {% if 'inventory' in request.url.path %}active{% endif %}">
+          <i class="bi bi-box-seam"></i> Inventory
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="/orders" class="nav-link {% if 'orders' in request.url.path %}active{% endif %}">
+          <i class="bi bi-bag-check"></i> Orders
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="/store" target="_blank" class="nav-link">
+          <i class="bi bi-shop"></i> View Store <i class="bi bi-box-arrow-up-right ms-1" style="font-size:.7rem"></i>
         </a>
       </li>
     </ul>

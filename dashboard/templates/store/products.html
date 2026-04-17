@@ -1,0 +1,65 @@
+{% extends "store/base_store.html" %}
+{% block title %}Shop All — GlitterGameDay{% endblock %}
+
+{% block content %}
+<div class="page-header-strip">
+  <div class="container-xl px-4">
+    <h1 class="page-header-title">✨ Shop All</h1>
+    <p class="page-header-sub">Game day glitter kits and supplies, handcrafted for the ultimate fan.</p>
+  </div>
+</div>
+
+<div class="container-xl px-4 py-5">
+  <!-- Category filter -->
+  <div class="d-flex flex-wrap gap-2 mb-4">
+    <a href="/store/products" class="filter-chip {% if not active_cat %}active{% endif %}">All Products</a>
+    {% for cat in categories %}
+    <a href="/store/products?category={{ cat }}" class="filter-chip {% if active_cat == cat %}active{% endif %}">
+      {{ cat | title }}
+    </a>
+    {% endfor %}
+  </div>
+
+  {% if products %}
+  <div class="row g-4">
+    {% for product in products %}
+    <div class="col-sm-6 col-lg-4">
+      <div class="product-card">
+        <a href="/store/product/{{ product.id }}" class="product-img-link">
+          <img src="{{ product.image_url or 'https://placehold.co/600x600/7B2FBE/FFD700?text=✨' }}"
+               alt="{{ product.name }}" class="product-img" loading="lazy">
+          {% if product.stock <= 5 and product.stock > 0 %}
+          <span class="stock-badge low">Only {{ product.stock }} left!</span>
+          {% elif product.stock == 0 %}
+          <span class="stock-badge out">Sold Out</span>
+          {% endif %}
+        </a>
+        <div class="product-body">
+          <div class="product-category">{{ product.category | title }}</div>
+          <h3 class="product-name"><a href="/store/product/{{ product.id }}">{{ product.name }}</a></h3>
+          <p class="product-desc">{{ product.description[:100] }}…</p>
+          <div class="d-flex align-items-center justify-content-between mt-auto pt-2">
+            <span class="product-price">${{ "%.2f"|format(product.price) }}</span>
+            {% if product.stock > 0 %}
+            <button class="add-to-cart-btn"
+                    onclick="addToCart('{{ product.id }}', {{ product.name|tojson }}, {{ product.price }}, {{ product.image_url|tojson }})">
+              <i class="bi bi-bag-plus"></i> Add to Bag
+            </button>
+            {% else %}
+            <span class="out-of-stock-label">Sold Out</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="text-center py-5">
+    <div style="font-size:3rem">✨</div>
+    <h4 class="mt-3" style="color:var(--s-purple)">No products here yet</h4>
+    <p class="text-muted">Check back soon — more sparkle is on the way!</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

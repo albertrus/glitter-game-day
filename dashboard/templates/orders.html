@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}Orders{% endblock %}
+{% block page_title %}🛍️ Orders{% endblock %}
+
+{% block content %}
+<!-- KPI strip -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="card kpi-card">
+      <div class="card-body">
+        <div class="kpi-icon text-warning mb-1"><i class="bi bi-hourglass-split"></i></div>
+        <div class="kpi-value">{{ totals.pending }}</div>
+        <div class="kpi-label">Pending</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card kpi-card">
+      <div class="card-body">
+        <div class="kpi-icon text-green mb-1"><i class="bi bi-check-circle"></i></div>
+        <div class="kpi-value">{{ totals.paid }}</div>
+        <div class="kpi-label">Paid</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card kpi-card">
+      <div class="card-body">
+        <div class="kpi-icon text-purple mb-1"><i class="bi bi-truck"></i></div>
+        <div class="kpi-value">{{ totals.shipped }}</div>
+        <div class="kpi-label">Shipped</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card kpi-card">
+      <div class="card-body">
+        <div class="kpi-icon text-gold mb-1"><i class="bi bi-currency-dollar"></i></div>
+        <div class="kpi-value">${{ "%.2f"|format(totals.revenue) }}</div>
+        <div class="kpi-label">Revenue</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Filter tabs -->
+<div class="d-flex gap-2 mb-3 flex-wrap">
+  {% for s in ['', 'pending', 'paid', 'shipped', 'delivered', 'cancelled'] %}
+  <a href="/orders{% if s %}?status_filter={{ s }}{% endif %}"
+     class="filter-btn {% if status_filter == s %}active{% endif %}">
+    {{ s | title if s else 'All' }}
+  </a>
+  {% endfor %}
+</div>
+
+<div class="card">
+  <div class="card-body p-0">
+    {% if orders %}
+    <div class="table-responsive">
+      <table class="table table-dark table-hover mb-0 dashboard-table">
+        <thead>
+          <tr>
+            <th>Order ID</th>
+            <th>Customer</th>
+            <th>Email</th>
+            <th>Total</th>
+            <th>Status</th>
+            <th>Date</th>
+            <th>Update</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for order in orders %}
+          <tr>
+            <td><code class="ad-id">{{ order.id[:8].upper() }}</code></td>
+            <td class="fw-semibold">{{ order.customer_name }}</td>
+            <td class="text-muted small">{{ order.customer_email }}</td>
+            <td class="fw-semibold">${{ "%.2f"|format(order.total) }}</td>
+            <td>
+              <span class="status-chip {{ order.status }}">{{ order.status | title }}</span>
+            </td>
+            <td class="text-muted small">{{ order.created_at.strftime('%b %d, %Y') }}</td>
+            <td>
+              <form class="d-flex gap-1" onsubmit="updateStatus(event, '{{ order.id }}')">
+                <select class="form-select form-select-dark form-select-sm" name="status" style="width:110px">
+                  {% for s in ['pending', 'paid', 'shipped', 'delivered', 'cancelled'] %}
+                  <option value="{{ s }}" {% if order.status == s %}selected{% endif %}>{{ s | title }}</option>
+                  {% endfor %}
+                </select>
+                <button type="submit" class="btn-copy">✓</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <i class="bi bi-bag-x"></i>
+      <h5>No Orders Yet</h5>
+      <p>Orders placed through your store will appear here.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function updateStatus(e, orderId) {
+  e.preventDefault();
+  const form = e.target;
+  const status = form.querySelector('select').value;
+  const res = await fetch(`/api/orders/${orderId}/status`, {
+    method: 'POST',
+    body: new FormData(form),
+  });
+  const data = await res.json();
+  if (data.status) {
+    showToast(`Order updated to ${data.status}`);
+    setTimeout(() => location.reload(), 1000);
+  }
+}
+</script>
+{% endblock %}
