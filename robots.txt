@@ -1,0 +1,5 @@
+User-Agent: *
+Allow: /
+
+Host: https://glittergameday.com
+Sitemap: https://glittergameday.com/sitemap.xml
