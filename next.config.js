@@ -1,12 +1,13 @@
 /** @type {import('next').NextConfig} */
 const isGithubPages = process.env.GITHUB_PAGES === 'true';
+const isStaticExport = isGithubPages || process.env.STATIC_EXPORT === 'true';
 
 const nextConfig = {
-  ...(isGithubPages && { output: 'export' }),
+  ...(isStaticExport && { output: 'export' }),
   basePath: isGithubPages ? '/glitter-game-day' : '',
   assetPrefix: isGithubPages ? '/glitter-game-day/' : '',
   images: {
-    unoptimized: isGithubPages,
+    unoptimized: isStaticExport,
     remotePatterns: [
       {
         protocol: 'https',
