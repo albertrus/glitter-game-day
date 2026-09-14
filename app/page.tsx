@@ -1,5 +1,6 @@
 import Hero from "@/components/Hero";
 import TeamSection from "@/components/TeamSection";
+import GallerySection from "@/components/GallerySection";
 import AboutSection from "@/components/AboutSection";
 import Footer from "@/components/Footer";
 import { teams } from "@/data/teams";
@@ -17,6 +18,7 @@ export default function HomePage() {
         );
       })}
 
+      <GallerySection />
       <AboutSection />
       <Footer />
     </>
