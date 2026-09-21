@@ -163,7 +163,7 @@ export default function TeamSection({ team, products }: TeamSectionProps) {
               color: team.id === "cowboys" || team.id === "spurs" ? "#000" : "#fff",
             }}
           >
-            Shop {team.name.split(" ").slice(-1)[0]} Jerseys on Etsy
+            Shop {team.name} Jerseys on Etsy
             <span className="group-hover:translate-x-1 transition-transform">→</span>
           </a>
           <span className="text-xs text-white/40">
