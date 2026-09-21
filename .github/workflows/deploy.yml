@@ -1,0 +1,61 @@
+name: Build and deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+env:
+  # Leave CUSTOM_DOMAIN empty to publish at
+  # https://albertrus.github.io/glitter-game-day.
+  # Set it to glittergameday.com once the DNS actually points at GitHub Pages.
+  # Setting it does two things: it drops the /glitter-game-day path prefix and
+  # it writes the CNAME file Pages needs. Setting it before DNS is live will
+  # break the site, so change it in the same sitting as the DNS change.
+  CUSTOM_DOMAIN: ""
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - run: npm ci
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Build static export
+        run: |
+          if [ -n "$CUSTOM_DOMAIN" ]; then
+            export NEXT_PUBLIC_SITE_URL="https://$CUSTOM_DOMAIN"
+          fi
+          GITHUB_PAGES=true npx next build
+        env:
+          NEXT_PUBLIC_GA_ID: ${{ secrets.GA_MEASUREMENT_ID }}
+
+      - name: Write CNAME for the custom domain
+        if: env.CUSTOM_DOMAIN != ''
+        run: echo "$CUSTOM_DOMAIN" > out/CNAME
+
+      - name: Disable Jekyll processing
+        run: touch out/.nojekyll
+
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./out
+          force_orphan: true
