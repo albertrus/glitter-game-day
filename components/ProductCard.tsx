@@ -124,6 +124,15 @@ export default function ProductCard({ product, team }: ProductCardProps) {
 
         {/* Product image */}
         <div className="relative aspect-square overflow-hidden bg-white/5">
+          {/* Placeholder gradient shown when image fails to load */}
+          <div
+            className="absolute inset-0 flex items-center justify-center"
+            style={{
+              background: `linear-gradient(135deg, ${team.colors.primary}, ${team.colors.secondary}40)`,
+            }}
+          >
+            <span className="text-5xl opacity-50">✦</span>
+          </div>
           <Image
             src={product.image}
             alt={`${product.name} — Glitter Game Day sequin jersey for ${team.name} fans`}
@@ -135,15 +144,6 @@ export default function ProductCard({ product, team }: ProductCardProps) {
               target.style.display = "none";
             }}
           />
-          {/* Placeholder gradient when no image */}
-          <div
-            className="absolute inset-0 flex items-center justify-center"
-            style={{
-              background: `linear-gradient(135deg, ${team.colors.primary}, ${team.colors.secondary}40)`,
-            }}
-          >
-            <span className="text-5xl opacity-50">✦</span>
-          </div>
 
           {/* Badge */}
           {product.badge && (
